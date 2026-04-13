@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/tickloop/qq/internal/chat"
+	"github.com/tickloop/qq/internal/spinner"
 )
 
 const defaultModel = "google/gemini-3-flash-preview"
@@ -60,7 +62,14 @@ func main() {
 
 	ctx := context.Background()
 	dbg("hitting OpenRouter chat completions")
+
+	var spin spinner.Spinner = spinner.NewANSISpinner(os.Stderr, 100*time.Millisecond)
+	spin.Start()
+	defer spin.Stop()
+
 	resp, err := provider.Complete(ctx, req)
+	spin.Stop()
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
