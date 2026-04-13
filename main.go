@@ -13,7 +13,7 @@ import (
 	"github.com/tickloop/qq/internal/spinner"
 )
 
-const defaultModel = "google/gemini-3-flash-preview"
+const defaultModel = "perplexity/sonar"
 var debug *log.Logger
 
 func init() {
