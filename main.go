@@ -11,6 +11,7 @@ import (
 
 	"github.com/tickloop/qq/internal/chat"
 	"github.com/tickloop/qq/internal/spinner"
+	"github.com/tickloop/qq/internal/render"
 )
 
 const defaultModel = "perplexity/sonar"
@@ -90,5 +91,5 @@ func main() {
 
 	dbg("parsed message: %s", text)
 	dbg("displaying final answer")
-	fmt.Println(text)
+	fmt.Println(render.Something(text))
 }
