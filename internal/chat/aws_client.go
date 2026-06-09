@@ -2,7 +2,9 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -10,9 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 )
 
-func AWSConverse(question string, modelId string) (string, error) {
-	ctx := context.Background()
-
+func AWSConverse(ctx context.Context, question string, modelId string) (string, error) {
 	// Precedence: AWS_REGION > AWS_DEFAULT_REGION > 'us-east-1'
 	var awsRegion string
 	awsRegion = os.Getenv("AWS_REGION")
@@ -47,5 +47,9 @@ func AWSConverse(question string, modelId string) (string, error) {
 	// Unwrap the response
 	outputMsg := resp.Output.(*types.ConverseOutputMemberMessage)
 	textBlock := outputMsg.Value.Content[0].(*types.ContentBlockMemberText)
-	return textBlock.Value, nil
+	answer := strings.TrimSpace(textBlock.Value)
+	if answer == "" {
+		return "", fmt.Errorf("error: empty response from model")
+	}
+	return answer, nil
 }

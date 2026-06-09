@@ -14,8 +14,13 @@ import (
 	"github.com/tickloop/qq/internal/render"
 )
 
-const defaultModel = "perplexity/sonar"
 var debug *log.Logger
+const defaultModel = "perplexity/sonar"
+const defaultProvider = "openrouter"
+var providerConverseFnMap = map[string]func(c context.Context, q, m string) (string, error){
+	"openrouter": func(c context.Context, q, m string) (string, error) { return chat.OpenRouterConverse(c, q, m) },
+	"bedrock": func(c context.Context, q, m string) (string, error) { return chat.AWSConverse(c, q, m) },
+}
 
 func init() {
 	if os.Getenv("QQ_DEBUG") != "" {
@@ -29,15 +34,22 @@ func dbg(format string, args ...any) {
 	}
 }
 
-func main() {
-	model := flag.String("m", defaultModel, "model to use")
+func parseArgs() map[string]string {
+	/* 
+		Returns a map[string]string
+		keys:
+			modelId: 
+			question:
+			provider:
+	*/
+	
+	model := flag.String("model", defaultModel, "model to use")
+	provider := flag.String("provider", defaultProvider, "provider for inference")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: qq [-m model] <question...>\n")
+		fmt.Fprintf(os.Stderr, "Usage: qq [--model model] [--provider provider] <question...>\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-
-	dbg("model=%s args=%v", *model, flag.Args())
 
 	question := strings.TrimSpace(strings.Join(flag.Args(), " "))
 	if question == "" {
@@ -45,51 +57,41 @@ func main() {
 		os.Exit(1)
 	}
 
-	apiKey := os.Getenv("OPENROUTER_API_KEY")
-	if apiKey == "" {
-		fmt.Fprintln(os.Stderr, "error: OPENROUTER_API_KEY is not set")
-		os.Exit(1)
+	dbg("model=%s", *model)
+	dbg("provider=%s", *provider)
+	dbg("argv=%v", flag.Args())
+	return map[string]string{
+		"modelId": *model,
+		"question": question,
+		"provider": *provider,
 	}
+}
 
-	var provider chat.Provider = chat.NewHTTPClient("https://openrouter.ai/api/v1", apiKey, nil)
 
-	req := chat.CompletionRequest{
-		Model: *model,
-		Messages: []chat.Message{
-			{Role: "user", Content: question},
-		},
-	}
-	dbg("request: %+v", req)
-
+func main() {
+	args := parseArgs()
 	ctx := context.Background()
-	dbg("hitting OpenRouter chat completions")
+	dbg("hitting %s chat completions", args["provider"])
 
 	var spin spinner.Spinner = spinner.NewANSISpinner(os.Stderr, 100*time.Millisecond)
 	spin.Start()
 	defer spin.Stop()
+	
+	
+	hldr, ok := providerConverseFnMap[args["provider"]]
+	if !ok {
+		err := fmt.Errorf("error: unknown provider %s", args["provider"])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
-	resp, err := provider.Complete(ctx, req)
+	answer, err := hldr(ctx, args["question"], args["modelId"])
 	spin.Stop()
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
-
-	dbg("raw response: %+v", resp)
-
-	if len(resp.Choices) == 0 {
-		fmt.Fprintln(os.Stderr, "error: no response from model")
-		os.Exit(1)
-	}
-
-	text := strings.TrimSpace(resp.Choices[0].Message.Content)
-	if text == "" {
-		fmt.Fprintln(os.Stderr, "error: empty response from model")
-		os.Exit(1)
-	}
-
-	dbg("parsed message: %s", text)
-	dbg("displaying final answer")
-	fmt.Println(render.Something(text))
+	fmt.Println(render.Something(answer))
 }

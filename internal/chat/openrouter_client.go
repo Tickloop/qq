@@ -7,37 +7,35 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 )
 
-// Provider defines the contract for chat completion backends.
-type Provider interface {
-	Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
-}
 
-// HTTPClient implements Provider using net/http against an OpenAI-compatible API.
-type HTTPClient struct {
+// hTTPClient implements Provider using net/http against an OpenAI-compatible API.
+type hTTPClient struct {
 	baseURL    string
 	apiKey     string
-	httpClient *http.Client
+	HttpClient *http.Client
 }
 
 // NewHTTPClient constructs an HTTPClient.
 // baseURL is the API root (e.g., "https://openrouter.ai/api/v1").
 // Accepting baseURL enables testing with httptest.
 // If httpClient is nil, http.DefaultClient is used.
-func NewHTTPClient(baseURL, apiKey string, httpClient *http.Client) *HTTPClient {
+func newHTTPClient(baseURL, apiKey string, httpClient *http.Client) *hTTPClient {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-	return &HTTPClient{
+	return &hTTPClient{
 		baseURL:    baseURL,
 		apiKey:     apiKey,
-		httpClient: httpClient,
+		HttpClient: httpClient,
 	}
 }
 
 // Complete sends a non-streaming chat completion request and returns the parsed response.
-func (c *HTTPClient) Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error) {
+func (c *hTTPClient) complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error) {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
@@ -52,7 +50,7 @@ func (c *HTTPClient) Complete(ctx context.Context, req CompletionRequest) (*Comp
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "application/json")
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.HttpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("send request: %w", err)
 	}
@@ -76,4 +74,43 @@ func (c *HTTPClient) Complete(ctx context.Context, req CompletionRequest) (*Comp
 	}
 
 	return &result, nil
+}
+
+func checkAndGetOpenRouterAPIKey() (string, error) {
+	apiKey := os.Getenv("OPENROUTER_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("error: OPENROUTER_API_KEY is not set")
+	}
+	return apiKey, nil
+}
+
+
+
+func OpenRouterConverse(ctx context.Context, question string, modelId string) (string, error) {
+	apiKey, err := checkAndGetOpenRouterAPIKey()
+	if err != nil {
+		return "", err
+	}
+	client := newHTTPClient("https://openrouter.ai/api/v1", apiKey, nil)
+	req := CompletionRequest{
+		Model: modelId,
+		Messages: []Message{
+			{Role: "user", Content: question},
+		},
+	}
+	resp, err := client.complete(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("error: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("error: no response from model")
+	}
+
+	text := strings.TrimSpace(resp.Choices[0].Message.Content)
+	if text == "" {
+		return "", fmt.Errorf("error: empty response from model")
+	}
+
+	return text, nil
 }

@@ -7,11 +7,11 @@ import (
 	"github.com/tickloop/qq/internal/chat"
 )
 
-func TestAWSHello(t *testing.T) {
+func TestOpenRouterConverse(t *testing.T) {
 	ctx := context.Background()
-	question := "Hi! What is your name?"
-	modelId := "global.anthropic.claude-opus-4-8"
-	answer, err := chat.AWSConverse(ctx, question, modelId)
+	question := "hello! What is your name?"
+	modelId := "perplexity/sonar"
+	answer, err := chat.OpenRouterConverse(ctx, question, modelId)
 	if err != nil {
 		t.Fatal(err)
 	}

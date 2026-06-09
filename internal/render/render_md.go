@@ -7,7 +7,7 @@ import (
 )
 
 func Something(markdown string) string {
-	cmd := exec.Command("batcat", "--language", "md", "--style=plain", "--color=always", "--paging=never")
+	cmd := exec.Command("bat", "--language", "md", "--style=plain", "--color=always", "--paging=never")
 	cmd.Stdin = strings.NewReader(markdown)
 
 	var stdout bytes.Buffer
