@@ -1,23 +1,14 @@
 package render
 
 import (
-	"bytes"
-	"os/exec"
-	"strings"
+	"github.com/charmbracelet/glamour"
 )
 
-func Something(markdown string) string {
-	cmd := exec.Command("bat", "--language", "md", "--style=plain", "--color=always", "--paging=never")
-	cmd.Stdin = strings.NewReader(markdown)
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-
-	if err := cmd.Run(); err != nil {
-		print(err)
+func RenderMarkdown(markdown string) string {
+	out, err := glamour.Render(markdown, "dark")
+	if err != nil {
+		// default: no markdown render
 		return markdown
 	}
-
-	return stdout.String()
+	return out
 }
-
