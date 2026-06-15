@@ -40,6 +40,18 @@ type APIError struct {
 	Body       string
 }
 
+type Model struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type ListModelsResponse struct {
+	Data []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"data"`
+}
+
 func (e *APIError) Error() string {
 	return fmt.Sprintf("api error (status %d): %s", e.StatusCode, e.Body)
 }

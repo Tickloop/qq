@@ -11,7 +11,6 @@ import (
 	"strings"
 )
 
-
 // hTTPClient implements Provider using net/http against an OpenAI-compatible API.
 type hTTPClient struct {
 	baseURL    string
@@ -76,6 +75,35 @@ func (c *hTTPClient) complete(ctx context.Context, req CompletionRequest) (*Comp
 	return &result, nil
 }
 
+func (c *hTTPClient) listModels(ctx context.Context) ([]Model, error) {
+	var models = []Model{}
+	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/models", http.NoBody)
+	if err != nil {
+		return models, err
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return models, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return models, err
+	}
+
+	var modelsResponse ListModelsResponse
+	if err := json.Unmarshal(respBody, &modelsResponse); err != nil {
+		return models, err
+	}
+	for _, model := range modelsResponse.Data {
+		models = append(models, Model{ID: model.ID, Name: model.Name})
+	}
+
+	return models, nil
+}
+
 func checkAndGetOpenRouterAPIKey() (string, error) {
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
 	if apiKey == "" {
@@ -83,8 +111,6 @@ func checkAndGetOpenRouterAPIKey() (string, error) {
 	}
 	return apiKey, nil
 }
-
-
 
 func OpenRouterConverse(ctx context.Context, question string, modelId string) (string, error) {
 	apiKey, err := checkAndGetOpenRouterAPIKey()
@@ -113,4 +139,13 @@ func OpenRouterConverse(ctx context.Context, question string, modelId string) (s
 	}
 
 	return text, nil
+}
+
+func OpenRouterListModels(ctx context.Context) ([]Model, error) {
+	client := newHTTPClient("https://openrouter.ai/api/v1", "", nil)
+	models, err := client.listModels(ctx)
+	if err != nil {
+		return models, err
+	}
+	return models, nil
 }

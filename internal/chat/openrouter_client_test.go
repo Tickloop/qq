@@ -18,3 +18,15 @@ func TestOpenRouterConverse(t *testing.T) {
 	t.Logf("question: %s", question)
 	t.Logf("(%s) answer: %s", modelId, answer)
 }
+
+
+func TestOpenRouterModelList(t *testing.T) {
+	ctx := context.Background()
+	modelList, err := chat.OpenRouterListModels(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, model := range modelList {
+		t.Logf("%s (%s)", model.Name, model.ID)
+	}
+}
