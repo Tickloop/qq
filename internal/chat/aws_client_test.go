@@ -18,3 +18,15 @@ func TestAWSHello(t *testing.T) {
 	t.Logf("question: %s", question)
 	t.Logf("(%s) answer: %s", modelId, answer)
 }
+
+
+func TestAWSListModels(t *testing.T) {
+	ctx := context.Background()
+	models, err := chat.AWSListModels(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, model := range models {
+		t.Logf("%s (%s)", model.Name, model.ID)
+	}
+}

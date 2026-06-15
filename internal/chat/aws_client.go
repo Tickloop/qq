@@ -8,13 +8,14 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/bedrock"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 )
 
-func AWSConverse(ctx context.Context, question string, modelId string) (string, error) {
+func getAWSRegion() string {
 	// Precedence: AWS_REGION > AWS_DEFAULT_REGION > 'us-east-1'
-	var awsRegion string
+	var awsRegion string = ""
 	awsRegion = os.Getenv("AWS_REGION")
 	if awsRegion == "" {
 		awsRegion = os.Getenv("AWS_DEFAULT_REGION")
@@ -22,7 +23,11 @@ func AWSConverse(ctx context.Context, question string, modelId string) (string, 
 	if awsRegion == "" {
 		awsRegion = "us-east-1"
 	}
+	return awsRegion
+}
 
+func AWSConverse(ctx context.Context, question string, modelId string) (string, error) {
+	awsRegion := getAWSRegion()
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	if err != nil {
 		return "", err
@@ -52,4 +57,31 @@ func AWSConverse(ctx context.Context, question string, modelId string) (string, 
 		return "", fmt.Errorf("error: empty response from model")
 	}
 	return answer, nil
+}
+
+
+func AWSListModels(ctx context.Context) ([]Model, error) {
+	var models []Model
+	awsRegion := getAWSRegion()
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	if err != nil {
+		return models, err
+	}
+
+	client := bedrock.NewFromConfig(cfg)
+	paginator := bedrock.NewListInferenceProfilesPaginator(client, &bedrock.ListInferenceProfilesInput{MaxResults: aws.Int32(1000)})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return models, err
+		}
+		for _, p := range page.InferenceProfileSummaries {
+			models = append(models, Model{
+				ID: aws.ToString(p.InferenceProfileId),
+				Name: aws.ToString(p.InferenceProfileName),
+			})
+		}
+	}
+	
+	return models, nil
 }
