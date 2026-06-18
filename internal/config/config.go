@@ -18,9 +18,10 @@ const (
 )
 
 type CLIArgs struct {
-	ModelId  string
-	Question string
-	Provider string
+	ModelId   string
+	Question  string
+	Provider  string
+	Configure bool
 }
 
 type Config struct {
@@ -62,22 +63,23 @@ func ParseArgs() CLIArgs {
 	args := NewArgs()
 	flag.StringVar(&args.ModelId, "model", "", "model to use")
 	flag.StringVar(&args.Provider, "provider", "", "provider for inference")
+	flag.BoolVar(&args.Configure, "configure", false, "configure qq")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: qq [--model model] [--provider provider] <question...>\n")
+		fmt.Fprintf(os.Stderr, "Usage: qq [--model model] [--provider provider] [--configure] <question...>\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
 	args.Question = strings.TrimSpace(strings.Join(flag.Args(), " "))
-	if args.Question == "" {
+	if args.Question == "" && !args.Configure {
 		flag.Usage()
 		os.Exit(1)
 	}
 	return args
 }
 
-func LoadConfig() (CLIArgs, error) {
-	var args CLIArgs
+func LoadConfig() (Config, error) {
+	var args Config
 	_, configPath, err := getCofnigPaths()
 	if err != nil {
 		return args, fmt.Errorf("error: can't load config\n%w", err)
@@ -105,7 +107,7 @@ func LoadConfig() (CLIArgs, error) {
 	return args, nil
 }
 
-func saveConfig(args CLIArgs) error {
+func saveConfig(args Config) error {
 	config := Config{
 		ModelId:  args.ModelId,
 		Provider: args.Provider,
@@ -130,7 +132,7 @@ func saveConfig(args CLIArgs) error {
 	return nil
 }
 
-func HandleConfigCreation(args *CLIArgs) {
+func HandleConfigCreation(args *Config) {
 	fmt.Println("Hey! Seems like we haven't configured qq yet. Let's do that right now: ")
 
 	// get provider

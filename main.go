@@ -40,12 +40,12 @@ func loadArgs() config.CLIArgs {
 	configArgs, err := config.LoadConfig()
 	cliArgs := config.ParseArgs()
 
-	if err != nil {
-		// there was no config found and no cli args either
-		if errors.Is(err, config.NotConfiguredErr) && (cliArgs.ModelId == "" || cliArgs.Provider == "") {
-			config.HandleConfigCreation(&configArgs)
-		}
+	// either the user needs to configure or the user wants to configure
+	if (err != nil && errors.Is(err, config.NotConfiguredErr)) || cliArgs.Configure {
+		config.HandleConfigCreation(&configArgs)
 	}
+	dbg("configArgs: %v", configArgs)
+	dbg("cliArgs: %v", cliArgs)
 
 	if cliArgs.ModelId == "" {
 		cliArgs.ModelId = configArgs.ModelId
@@ -59,6 +59,11 @@ func loadArgs() config.CLIArgs {
 
 func main() {
 	args := loadArgs()
+	dbg("model=%s", args.ModelId)
+	dbg("provider=%s", args.Provider)
+	dbg("question=%s", args.Question)
+	dbg("configure=%v", args.Configure)
+
 	ctx := context.Background()
 	dbg("hitting %s chat completions", args.Provider)
 
@@ -68,11 +73,8 @@ func main() {
 
 	hldr, ok := providerConverseFnMap[args.Provider]
 	if !ok {
-		err := fmt.Errorf("error: unknown provider %s", args.Provider)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
+		fmt.Fprintf(os.Stderr, "error: unknown provider %s\n", args.Provider)
+		os.Exit(1)
 	}
 
 	answer, err := hldr(ctx, args.Question, args.ModelId)
