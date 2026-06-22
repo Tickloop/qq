@@ -64,6 +64,11 @@ func main() {
 	dbg("question=%s", args.Question)
 	dbg("configure=%v", args.Configure)
 
+	if(args.Configure) {
+		fmt.Println("Configuration complete")
+		os.Exit(0)
+	}
+
 	ctx := context.Background()
 	dbg("hitting %s chat completions", args.Provider)
 
