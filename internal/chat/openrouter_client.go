@@ -138,7 +138,7 @@ func OpenRouterConverse(ctx context.Context, question string, modelId string) (s
 		return "", fmt.Errorf("error: empty response from model")
 	}
 	ctxWindow.AddMessage(NewMessage("assistant", text))
-
+	ctxWindow.Save()
 	return text, nil
 }
 
