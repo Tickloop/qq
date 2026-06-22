@@ -117,12 +117,12 @@ func OpenRouterConverse(ctx context.Context, question string, modelId string) (s
 	if err != nil {
 		return "", err
 	}
+	ctxWindow := NewContextWindow()
+	ctxWindow.AddMessage(NewMessage("user", question))
 	client := newHTTPClient("https://openrouter.ai/api/v1", apiKey, nil)
 	req := CompletionRequest{
-		Model: modelId,
-		Messages: []Message{
-			{Role: "user", Content: question},
-		},
+		Model:    modelId,
+		Messages: ctxWindow.Messages,
 	}
 	resp, err := client.complete(ctx, req)
 	if err != nil {
@@ -137,6 +137,7 @@ func OpenRouterConverse(ctx context.Context, question string, modelId string) (s
 	if text == "" {
 		return "", fmt.Errorf("error: empty response from model")
 	}
+	ctxWindow.AddMessage(NewMessage("assistant", text))
 
 	return text, nil
 }
