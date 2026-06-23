@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -8,7 +9,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // hTTPClient implements Provider using net/http against an OpenAI-compatible API.
@@ -138,7 +142,6 @@ func OpenRouterConverse(ctx context.Context, question string, modelId string) (s
 		return "", fmt.Errorf("error: empty response from model")
 	}
 	ctxWindow.AddMessage(NewMessage("assistant", text))
-	ctxWindow.Save()
 	return text, nil
 }
 
@@ -149,4 +152,50 @@ func OpenRouterListModels(ctx context.Context) ([]Model, error) {
 		return models, err
 	}
 	return models, nil
+}
+
+func ListChats() ([]ContextWindow, error) {
+	chatDir, err := getChatDir()
+	if err != nil {
+		return nil, err
+	}
+
+	// list each file in the dir
+	fileNames, err := filepath.Glob(filepath.Join(chatDir, "*.jsonl"))
+	if err != nil {
+		return nil, err
+	}
+
+	// read first line from each file
+	chats := make([]ContextWindow, len(fileNames))
+	for idx, fileName := range fileNames {
+		// read first line
+		msg := Message{}
+		fd, err := os.Open(fileName)
+		if err != nil {
+			return nil, err
+		}
+		defer fd.Close()
+
+		scanner := bufio.NewScanner(fd)
+		scanner.Scan()
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+		line := scanner.Bytes()
+		if err := json.Unmarshal(line, &msg); err != nil {
+			return nil, err
+		}
+
+		// create new context window with (filename[id], msg[0])
+		c := NewContextWindow()
+		c.Messages = append(c.Messages, msg)
+		c.Id, err = uuid.Parse((strings.TrimSuffix(filepath.Base(fileName), ".jsonl")))
+		if err != nil {
+			return nil, err
+		}
+		chats[idx] = c
+	}
+
+	return chats, nil
 }

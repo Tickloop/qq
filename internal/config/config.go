@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/tickloop/qq/internal/utils"
 )
 
 const (
@@ -54,8 +56,20 @@ func getCofnigPaths() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+
 	configDir := filepath.Join(base, ".config/qq")
-	configPath := filepath.Join(configDir, "config.json")
+	if envConfigDir, ok := os.LookupEnv("QQ_CONFIG_DIR"); ok && envConfigDir != "" {
+		if envConfigDir, err = utils.ResolveToAbsPath(envConfigDir); err == nil {
+			configDir = envConfigDir
+		}
+	}
+
+	configFileName := "config.json"
+	if envConfigFileName, ok := os.LookupEnv("QQ_CONFIG_FILE_NAME"); ok && envConfigFileName != "" {
+		configFileName = envConfigFileName
+	}
+
+	configPath := filepath.Join(configDir, configFileName)
 	return configDir, configPath, nil
 }
 
