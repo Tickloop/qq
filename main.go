@@ -8,10 +8,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/tickloop/qq/internal/chat"
 	"github.com/tickloop/qq/internal/config"
-	"github.com/tickloop/qq/internal/render"
 	"github.com/tickloop/qq/internal/spinner"
+	"golang.org/x/term"
 )
 
 var debug *log.Logger
@@ -57,6 +60,33 @@ func loadArgs() config.CLIArgs {
 	return cliArgs
 }
 
+func styleQuestion(question string) string {
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		w = 80
+	}
+
+	styleQuestion := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00bb00"))
+
+	styleQuestionPrompt := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder(), true, false).
+		BorderForeground(lipgloss.Color("#00bb00")).
+		Padding(0, 0)
+
+	styleQuestionPrompt = styleQuestionPrompt.Width(w - styleQuestionPrompt.GetHorizontalFrameSize() - 1)
+	stylePrompt := lipgloss.NewStyle().Foreground(lipgloss.Color("#00bb00"))
+	return styleQuestionPrompt.Render(stylePrompt.Render("❯ ") + styleQuestion.Render(question))
+}
+
+func styleAnswer(answer string) string {
+	out, err := glamour.Render(answer, "dark")
+	if err != nil {
+		// default: no markdown render
+		return answer
+	}
+	return out
+}
+
 func main() {
 	args := loadArgs()
 	dbg("model=%s", args.ModelId)
@@ -64,7 +94,9 @@ func main() {
 	dbg("question=%s", args.Question)
 	dbg("configure=%v", args.Configure)
 
-	if(args.Configure) {
+	fmt.Println(styleQuestion(args.Question))
+
+	if args.Configure {
 		fmt.Println("Configuration complete")
 		os.Exit(0)
 	}
@@ -88,5 +120,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println(render.RenderMarkdown(answer))
+	fmt.Println(styleAnswer(answer))
 }
