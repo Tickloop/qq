@@ -66,16 +66,13 @@ func styleQuestion(question string) string {
 		w = 80
 	}
 
-	styleQuestion := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00bb00"))
-
-	styleQuestionPrompt := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true, false).
-		BorderForeground(lipgloss.Color("#00bb00")).
-		Padding(0, 0)
-
-	styleQuestionPrompt = styleQuestionPrompt.Width(w - styleQuestionPrompt.GetHorizontalFrameSize() - 1)
+	styleQuestion := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FAF0E6"))
 	stylePrompt := lipgloss.NewStyle().Foreground(lipgloss.Color("#00bb00"))
-	return styleQuestionPrompt.Render(stylePrompt.Render("❯ ") + styleQuestion.Render(question))
+
+	styleQuestionPrompt := lipgloss.NewStyle().Padding(1, 0)
+	styleQuestionPrompt = styleQuestionPrompt.Width(w - styleQuestionPrompt.GetHorizontalFrameSize() - 1)
+	
+	return styleQuestionPrompt.Render(stylePrompt.Render("\033[1m›\033[0m ") + styleQuestion.Render(question))
 }
 
 func styleAnswer(answer string) string {
