@@ -1,4 +1,4 @@
-package chat_test
+package inference_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tickloop/qq/internal/chat"
+	"github.com/tickloop/qq/internal/inference"
 )
 
 func TestOpenRouterConverse(t *testing.T) {
@@ -16,7 +16,7 @@ func TestOpenRouterConverse(t *testing.T) {
 	ctx := context.Background()
 	question := "hello! What is your name?"
 	modelId := "perplexity/sonar"
-	answer, err := chat.OpenRouterConverse(ctx, question, modelId)
+	answer, err := inference.OpenRouterConverse(ctx, question, modelId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestOpenRouterConverse(t *testing.T) {
 	t.Logf("(%s) answer: %s", modelId, answer)
 
 	// also test chat persistance
-	chats, err := chat.ListChats()
+	chats, err := inference.ListChats()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestOpenRouterConverse(t *testing.T) {
 
 func TestOpenRouterModelList(t *testing.T) {
 	ctx := context.Background()
-	modelList, err := chat.OpenRouterListModels(ctx)
+	modelList, err := inference.OpenRouterListModels(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,8 +68,8 @@ func TestAddMessageCreateDir(t *testing.T) {
 	os.Setenv("QQ_CHAT_DIR", testDirPath)
 
 	// a new dir and a new file should be created
-	cw := chat.NewContextWindow()
-	cw.AddMessage(chat.NewMessage("user", "hello"))
+	cw := inference.NewContextWindow()
+	cw.AddMessage(inference.NewMessage("user", "hello"))
 
 	if _, err := os.Stat(testDirPath); err != nil {
 		t.Log("new dir not created")

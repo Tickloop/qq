@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/tickloop/qq/internal/chat"
+	"github.com/tickloop/qq/internal/inference"
 	"github.com/tickloop/qq/internal/config"
 	"github.com/tickloop/qq/internal/spinner"
 	"golang.org/x/term"
@@ -20,8 +20,8 @@ import (
 var debug *log.Logger
 
 var providerConverseFnMap = map[string]func(c context.Context, q, m string) (string, error){
-	"openrouter": func(c context.Context, q, m string) (string, error) { return chat.OpenRouterConverse(c, q, m) },
-	"bedrock":    func(c context.Context, q, m string) (string, error) { return chat.AWSConverse(c, q, m) },
+	"openrouter": func(c context.Context, q, m string) (string, error) { return inference.OpenRouterConverse(c, q, m) },
+	"bedrock":    func(c context.Context, q, m string) (string, error) { return inference.AWSConverse(c, q, m) },
 }
 
 func init() {

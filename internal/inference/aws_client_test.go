@@ -1,17 +1,17 @@
-package chat_test
+package inference_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/tickloop/qq/internal/chat"
+	"github.com/tickloop/qq/internal/inference"
 )
 
 func TestAWSHello(t *testing.T) {
 	ctx := context.Background()
 	question := "Hi! What is your name?"
 	modelId := "global.anthropic.claude-opus-4-8"
-	answer, err := chat.AWSConverse(ctx, question, modelId)
+	answer, err := inference.AWSConverse(ctx, question, modelId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestAWSHello(t *testing.T) {
 
 func TestAWSListModels(t *testing.T) {
 	ctx := context.Background()
-	models, err := chat.AWSListModels(ctx)
+	models, err := inference.AWSListModels(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
