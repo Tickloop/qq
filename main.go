@@ -11,8 +11,9 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/tickloop/qq/internal/inference"
+	"github.com/tickloop/qq/internal/agent"
 	"github.com/tickloop/qq/internal/config"
+	"github.com/tickloop/qq/internal/inference"
 	"github.com/tickloop/qq/internal/spinner"
 	"golang.org/x/term"
 )
@@ -84,6 +85,18 @@ func styleAnswer(answer string) string {
 	return out
 }
 
+func addSearchResultToQuestion(question string) string {
+	questionWithSearchResults := fmt.Sprintf("Question: %v\n", question)
+	searchResults, err := agent.WebSearchFirecrawl(question)
+	dbg("got search results: %v\n", searchResults)
+	if err != nil {
+		searchResults = "ERR: Search results failed to load"
+	} else {
+		questionWithSearchResults = fmt.Sprintf("Search Results: %v\n\nQuestion: %v\n", searchResults, question)
+	}
+	return questionWithSearchResults
+}
+
 func main() {
 	args := loadArgs()
 	dbg("model=%s", args.ModelId)
@@ -92,11 +105,11 @@ func main() {
 	dbg("configure=%v", args.Configure)
 
 	fmt.Println(styleQuestion(args.Question))
-
 	if args.Configure {
 		fmt.Println("Configuration complete")
 		os.Exit(0)
 	}
+	questionPrompt := addSearchResultToQuestion(args.Question)
 
 	ctx := context.Background()
 	dbg("hitting %s chat completions", args.Provider)
@@ -111,7 +124,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	answer, err := hldr(ctx, args.Question, args.ModelId)
+	answer, err := hldr(ctx, questionPrompt, args.ModelId)
 	spin.Stop()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
