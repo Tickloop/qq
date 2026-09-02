@@ -14,11 +14,6 @@ import (
 )
 
 
-type Config struct {
-	ModelId  string `json:"ModelId"`
-	Provider string `json:"Provider"`
-}
-
 var NotConfiguredErr = errors.New("error: config file not found")
 
 func readLine() (string, error) {
