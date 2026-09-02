@@ -13,6 +13,12 @@ import (
 	"github.com/tickloop/qq/internal/utils"
 )
 
+
+type Config struct {
+	ModelId  string `json:"ModelId"`
+	Provider string `json:"Provider"`
+}
+
 var NotConfiguredErr = errors.New("error: config file not found")
 
 func readLine() (string, error) {
@@ -45,11 +51,6 @@ func getCofnigPaths() (string, string, error) {
 
 	configPath := filepath.Join(configDir, configFileName)
 	return configDir, configPath, nil
-}
-
-type Config struct {
-	ModelId  string `json:"ModelId"`
-	Provider string `json:"Provider"`
 }
 
 func HandleConfigCreation(args *Config) {

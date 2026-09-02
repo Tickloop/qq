@@ -12,15 +12,6 @@ const (
 	defaultProvider = "openrouter"
 )
 
-type CLIArgs struct {
-	ModelId   string
-	Question  string
-	Provider  string
-	Configure bool
-}
-
-
-
 func NewArgs() CLIArgs {
 	return CLIArgs{
 		ModelId:  defaultModel,
