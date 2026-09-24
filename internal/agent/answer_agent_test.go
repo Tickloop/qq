@@ -8,7 +8,7 @@ import (
 // Functional test
 func TestFirecrawlWebSearch(t *testing.T) {
 	query := "What is a test?"
-	_, err := webSearchFirecrawl(query)
+	_, err := WebSearchFirecrawl(query)
 	if err != nil {
 		t.Fatal(err)
 	}

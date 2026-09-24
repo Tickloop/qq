@@ -8,12 +8,13 @@ import (
 var debug *log.Logger
 
 func init() {
-	debug = log.New(os.Stdout, "[qq]", log.Ltime)
+	if os.Getenv("QQ_DEBUG") != "" {
+        debug = log.New(os.Stdout, "[qq]", log.Ltime)  
+    } 
 }
 
 func Dbg(format string, args ...any) {
-	if debug == nil {
-		debug = log.New(os.Stderr, "[qq] ", log.Ltime)
-	}
-	debug.Printf(format, args...)
+	if debug != nil {
+        debug.Printf(format, args...)
+    }
 }
