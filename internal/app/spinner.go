@@ -26,10 +26,6 @@ func (s Spinner) Tick() tea.Msg {
     return TickMsg{}
 }
 
-func (s Spinner) Init() tea.Cmd {
-    return nil
-}
-
 func (s Spinner) Update(msg tea.Msg) (Spinner, tea.Cmd) {
     switch msg.(type) {
     case TickMsg:
