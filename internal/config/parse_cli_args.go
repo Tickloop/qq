@@ -20,7 +20,6 @@ func NewArgs() CLIArgs {
 	}
 }
 
-
 func ParseCliArgs() CLIArgs {
 	args := NewArgs()
 	flag.StringVar(&args.ModelId, "model", "", "model to use")
@@ -39,4 +38,3 @@ func ParseCliArgs() CLIArgs {
 	}
 	return args
 }
-

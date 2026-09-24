@@ -2,9 +2,9 @@ package agent
 
 import (
 	"context"
-	"time"
 	"fmt"
 	"strings"
+	"time"
 
 	firecrawl "github.com/firecrawl/firecrawl/apps/go-sdk"
 	"github.com/firecrawl/firecrawl/apps/go-sdk/option"
@@ -12,16 +12,16 @@ import (
 
 const (
 	nSearchResults = 2
-	maxAttempts = 5
+	maxAttempts    = 5
 )
 
 func conertFirecrawlJSONToText(results []map[string]any) string {
-	var output strings.Builder 
+	var output strings.Builder
 	for i, result := range results {
 		fmt.Fprintf(
 			&output,
 			"Result: %d\nTitle: %v\nURL: %v\nSummary: %v\n\n",
-			i + 1,
+			i+1,
 			result["title"],
 			result["url"],
 			result["summary"],
@@ -30,12 +30,11 @@ func conertFirecrawlJSONToText(results []map[string]any) string {
 	return strings.TrimSpace(output.String())
 }
 
-
 func WebSearchFirecrawl(query string) (string, error) {
 	client, err := firecrawl.NewClient(
 		option.WithMaxRetries(1),
 		option.WithBackoffFactor(0.5),
-		option.WithTimeout(10 * time.Second),
+		option.WithTimeout(10*time.Second),
 	)
 	if err != nil {
 		return "", err
@@ -66,7 +65,7 @@ func WebSearchFirecrawl(query string) (string, error) {
 // 	answer string
 //
 // 	tools ToolRegistry
-// 	systemPrompt string	
+// 	systemPrompt string
 // 	inferenceClient inference.InferenceClient
 // }
 //
@@ -81,7 +80,7 @@ func WebSearchFirecrawl(query string) (string, error) {
 // }
 //
 //
-// func hldrWebSearchTool(query string) string {	
+// func hldrWebSearchTool(query string) string {
 // 	searchAnswer, err := webSearchFirecrawl(query)
 // 	if err != nil {
 // 		return "ERR: Couldn't use web_search. Continue without this tool"

@@ -19,7 +19,6 @@ func TestAWSHello(t *testing.T) {
 	t.Logf("(%s) answer: %s", modelId, answer)
 }
 
-
 func TestAWSListModels(t *testing.T) {
 	ctx := context.Background()
 	models, err := inference.AWSListModels(ctx)

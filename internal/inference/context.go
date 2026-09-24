@@ -1,4 +1,4 @@
-package inference 
+package inference
 
 import (
 	"encoding/json"

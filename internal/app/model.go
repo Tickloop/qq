@@ -1,67 +1,45 @@
 package app
 
 import (
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"context"
 	"fmt"
-	"os"
-
-	tea "charm.land/bubbletea/v2"
-	glamour "charm.land/glamour/v2"
-	lipgloss "charm.land/lipgloss/v2"
 	"github.com/tickloop/qq/internal/agent"
 	"github.com/tickloop/qq/internal/config"
 	"github.com/tickloop/qq/internal/inference"
-
-	"golang.org/x/term"
 )
 
-
-func styleQuestion(question string) string {
-	w, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		w = 80
-	}
-
-	styleQuestion := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FAF0E6"))
-	stylePrompt := lipgloss.NewStyle().Foreground(lipgloss.Color("#00bb00"))
-
-	styleQuestionPrompt := lipgloss.NewStyle().Padding(1, 0)
-	styleQuestionPrompt = styleQuestionPrompt.Width(w - styleQuestionPrompt.GetHorizontalFrameSize() - 1)
-	
-	return styleQuestionPrompt.Render(stylePrompt.Render("\033[1m›\033[0m ") + styleQuestion.Render(question))
-}
-
-func styleAnswer(answer string) string {
-	out, err := glamour.Render(answer, "dark")
-	if err != nil {
-		return answer
-	}
-	return out
-}
-
 type QAModel struct {
-	Question string
-	Answer string
-    Error error
-	IsLoading bool
-    args config.CLIArgs 
-    spinner Spinner
+	question   Question
+	answer     string
+	err        error
+	isLoading  bool
+	args       config.CLIArgs
+	spinner    Spinner
+	windowSize windowSize
 }
 
 type answerMsg struct {
-    answer string
-    err error
+	answer string
+	err    error
+}
+
+type windowSize struct {
+	w int
+	h int
 }
 
 func NewQAModel(args config.CLIArgs) QAModel {
-    return QAModel{
-        Question: args.Question,
-        Answer: "",
-        Error: nil,
-        IsLoading: true,
-        args: args,
-        spinner: NewSpinner(), 
-    }
+	return QAModel{
+		question:   Question{question: args.Question},
+		answer:     "",
+		err:        nil,
+		isLoading:  true,
+		args:       args,
+		spinner:    NewSpinner(),
+		windowSize: windowSize{w: 80, h: 24},
+	}
 }
 
 func addSearchResultToQuestion(question string) string {
@@ -76,61 +54,74 @@ func addSearchResultToQuestion(question string) string {
 }
 
 func (m QAModel) fetchAnswer() tea.Msg {
-    hldr := inference.ProviderConverseFnMap[m.args.Provider]
-    questionWithSearchResults := addSearchResultToQuestion(m.args.Question)
+	hldr := inference.ProviderConverseFnMap[m.args.Provider]
+	questionWithSearchResults := addSearchResultToQuestion(m.args.Question)
 
-    ctx := context.Background()
-    answer, err := hldr(ctx, questionWithSearchResults, m.args.ModelId)
-    if err != nil {
-        return answerMsg{ answer: "", err: fmt.Errorf("ERR: %v", err) }
-    }
-    return answerMsg{ answer: answer, err: err }
+	ctx := context.Background()
+	answer, err := hldr(ctx, questionWithSearchResults, m.args.ModelId)
+	if err != nil {
+		return answerMsg{answer: "", err: fmt.Errorf("ERR: %v", err)}
+	}
+	return answerMsg{answer: answer, err: err}
 }
 
 func (m QAModel) Init() tea.Cmd {
-    return tea.Batch(m.spinner.Tick, m.fetchAnswer)
+	return tea.Batch(m.spinner.Tick, m.fetchAnswer)
 }
 
 func (m QAModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-	    switch msg.String() {
+		switch msg.String() {
 		case "ctrl+c":
-		    return m, tea.Quit
+			return m, tea.Quit
 		}
-    case TickMsg:
-        spinner, cmd := m.spinner.Update(msg)
-        m.spinner = spinner
-        if m.IsLoading {
-            return m, cmd
-        }
-        return m, nil
-    case answerMsg:
-        m.IsLoading = false
-        m.Answer = msg.answer
-        m.Error = msg.err
-        return m, tea.Quit
-    }
-    return m, nil
+	case TickMsg:
+		spinner, cmd := m.spinner.Update(msg)
+		m.spinner = spinner
+		if m.isLoading {
+			return m, cmd
+		}
+		return m, nil
+	case answerMsg:
+		m.isLoading = false
+		m.answer = msg.answer
+		m.err = msg.err
+		return m, tea.Quit
+	case tea.WindowSizeMsg:
+		m.windowSize.w = msg.Width
+		m.windowSize.h = msg.Height
+		buildRenderer(msg.Width)
+		return m, nil
+	}
+	return m, nil
 }
 
 func (m QAModel) View() tea.View {
-    questionView := styleQuestion(m.Question)
-    answerView := ""
-    switch {
-    case m.IsLoading:
-        answerView = m.spinner.View()
-    case m.Error != nil:
-        answerView = styleAnswer(m.Error.Error())
-    default:
-        answerView = styleAnswer(m.Answer)
-    }
-    return tea.NewView(
-        lipgloss.JoinVertical(
-            lipgloss.Left,
-            questionView,
-            answerView,
-        ),
-    )
-}
+	// question section
+	promptView := promptView()
+	if m.isLoading {
+		promptView = m.spinner.View(m.isLoading)
+	}
+	questionView := m.question.View(promptView, m.windowSize.w)
 
+	// answer section
+	answerView := ""
+	switch {
+	case m.isLoading:
+		answerView = ""
+	case m.err != nil:
+		answerView = styleError(m.err.Error())
+	case m.answer != "":
+		answerView = styleAnswer(m.answer)
+	}
+
+	// compose
+	return tea.NewView(
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			questionView,
+			answerView,
+		),
+	)
+}

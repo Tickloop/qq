@@ -1,4 +1,4 @@
-package inference 
+package inference
 
 import (
 	"context"
@@ -59,7 +59,6 @@ func AWSConverse(ctx context.Context, question string, modelId string) (string, 
 	return answer, nil
 }
 
-
 func AWSListModels(ctx context.Context) ([]Model, error) {
 	var models []Model
 	awsRegion := getAWSRegion()
@@ -77,11 +76,11 @@ func AWSListModels(ctx context.Context) ([]Model, error) {
 		}
 		for _, p := range page.InferenceProfileSummaries {
 			models = append(models, Model{
-				ID: aws.ToString(p.InferenceProfileId),
+				ID:   aws.ToString(p.InferenceProfileId),
 				Name: aws.ToString(p.InferenceProfileName),
 			})
 		}
 	}
-	
+
 	return models, nil
 }

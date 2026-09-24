@@ -13,7 +13,6 @@ import (
 	"github.com/tickloop/qq/internal/utils"
 )
 
-
 var NotConfiguredErr = errors.New("error: config file not found")
 
 func readLine() (string, error) {
