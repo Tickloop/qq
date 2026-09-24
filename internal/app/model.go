@@ -39,12 +39,6 @@ func styleAnswer(answer string) string {
 	return out
 }
 
-
-var providerConverseFnMap = map[string]func(c context.Context, q, m string) (string, error){
-	"openrouter": func(c context.Context, q, m string) (string, error) { return inference.OpenRouterConverse(c, q, m) },
-	"bedrock":    func(c context.Context, q, m string) (string, error) { return inference.AWSConverse(c, q, m) },
-}
-
 type QAModel struct {
 	Question string
 	Answer string
@@ -82,13 +76,10 @@ func addSearchResultToQuestion(question string) string {
 }
 
 func (m QAModel) fetchAnswer() tea.Msg {
-    hldr, ok := providerConverseFnMap[m.args.Provider]
-    if !ok {
-        return answerMsg{ answer: "", err: fmt.Errorf("ERR: Provider not found") }
-    }
+    hldr := inference.ProviderConverseFnMap[m.args.Provider]
+    questionWithSearchResults := addSearchResultToQuestion(m.args.Question)
 
     ctx := context.Background()
-    questionWithSearchResults := addSearchResultToQuestion(m.args.Question)
     answer, err := hldr(ctx, questionWithSearchResults, m.args.ModelId)
     if err != nil {
         return answerMsg{ answer: "", err: fmt.Errorf("ERR: %v", err) }
